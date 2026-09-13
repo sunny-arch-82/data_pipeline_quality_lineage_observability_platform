@@ -186,11 +186,4 @@ The added tests cover severity classification and downstream lineage traversal i
 
 `.env`, Python caches, dbt targets/packages/logs, Elementary generated output, and runtime reports are ignored. Commit `.env.example`, never a real `.env` containing credentials or Slack webhooks.
 
-## Attribution and license
 
-This repository is a modified portfolio version of the MIT-licensed upstream project:
-
-- Upstream: `isinghabhishek/data-observability-platform`
-- Original author: Abhishek Singh
-
-The original MIT copyright and permission notice are preserved in [`LICENSE`](LICENSE). See [`NOTICE.md`](NOTICE.md) for the modifications made in this portfolio version.
