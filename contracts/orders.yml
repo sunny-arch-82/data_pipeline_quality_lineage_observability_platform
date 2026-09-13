@@ -1,0 +1,13 @@
+dataset: public.orders
+columns:
+  - name: order_id
+    type: INTEGER
+    nullable: false
+    unique: true
+  - name: customer_id
+    type: INTEGER
+    nullable: false
+  - name: status
+    type: TEXT
+    nullable: true
+freshness_sla: 3600

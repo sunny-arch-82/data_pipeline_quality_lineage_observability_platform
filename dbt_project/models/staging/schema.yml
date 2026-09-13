@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: "Staged orders from raw source"
+    columns:
+      - name: order_id
+        description: "Unique order identifier"
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Customer identifier"
+        tests:
+          - not_null
+      - name: status
+        description: "Order status"
+        tests:
+          - accepted_values:
+              values: ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
+      - name: created_at
+        description: "Order creation timestamp"
+        tests:
+          - not_null
+    tests:
+      - elementary.volume_anomalies:
+          timestamp_column: created_at
+      - elementary.null_count_anomalies:
+          timestamp_column: created_at

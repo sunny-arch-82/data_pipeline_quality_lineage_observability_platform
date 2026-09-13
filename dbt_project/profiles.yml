@@ -1,0 +1,28 @@
+data_pipeline_observability:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'localhost') }}"
+      port: "{{ env_var('DBT_PORT', '5432') | int }}"
+      user: "{{ env_var('DBT_USER', 'postgres') }}"
+      password: "{{ env_var('DBT_PASSWORD', 'postgres') }}"
+      dbname: "{{ env_var('DBT_DBNAME', 'observability') }}"
+      schema: "{{ env_var('DBT_SCHEMA', 'public') }}"
+      threads: 4
+    bigquery:
+      type: bigquery
+      method: oauth
+      project: "{{ env_var('DBT_BQ_PROJECT', '') }}"
+      dataset: "{{ env_var('DBT_BQ_DATASET', 'observability') }}"
+      threads: 4
+    snowflake:
+      type: snowflake
+      account: "{{ env_var('DBT_SF_ACCOUNT', '') }}"
+      user: "{{ env_var('DBT_SF_USER', '') }}"
+      password: "{{ env_var('DBT_SF_PASSWORD', '') }}"
+      role: "{{ env_var('DBT_SF_ROLE', 'SYSADMIN') }}"
+      database: "{{ env_var('DBT_SF_DATABASE', 'OBSERVABILITY') }}"
+      warehouse: "{{ env_var('DBT_SF_WAREHOUSE', 'COMPUTE_WH') }}"
+      schema: "{{ env_var('DBT_SF_SCHEMA', 'PUBLIC') }}"
+      threads: 4

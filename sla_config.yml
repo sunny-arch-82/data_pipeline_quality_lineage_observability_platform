@@ -1,0 +1,4 @@
+datasets:
+  - name: public.marts_orders
+    freshness_sla: 3600
+    warning_threshold: 0.8

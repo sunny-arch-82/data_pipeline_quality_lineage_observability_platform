@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: marts_orders
+    description: "Final orders mart with enriched data"
+    columns:
+      - name: order_id
+        description: "Unique order identifier"
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        tests:
+          - not_null
+      - name: status
+        tests:
+          - not_null
+      - name: amount
+        tests:
+          - not_null
+    tests:
+      - elementary.volume_anomalies:
+          timestamp_column: created_at
+      - elementary.null_count_anomalies:
+          timestamp_column: created_at
+      - elementary.dimension_anomalies:
+          column_name: status
+          timestamp_column: created_at

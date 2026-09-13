@@ -1,0 +1,96 @@
+version: "3.9"
+
+services:
+  # ── Postgres warehouse ────────────────────────────────────────────────────
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-observability}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Marquez API ───────────────────────────────────────────────────────────
+  marquez:
+    image: marquezproject/marquez:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MARQUEZ_PORT: 5000
+      MARQUEZ_ADMIN_PORT: 5001
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-observability}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/v1/namespaces || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ── Marquez UI ────────────────────────────────────────────────────────────
+  marquez-web:
+    image: marquezproject/marquez-web:latest
+    depends_on:
+      marquez:
+        condition: service_healthy
+    environment:
+      MARQUEZ_HOST: marquez
+      MARQUEZ_PORT: 5000
+    ports:
+      - "3000:3000"
+
+  # ── SLA Monitor service ───────────────────────────────────────────────────
+  sla-monitor:
+    build:
+      context: .
+      dockerfile: Dockerfile.sla_monitor
+    depends_on:
+      postgres:
+        condition: service_healthy
+      marquez:
+        condition: service_healthy
+    environment:
+      MARQUEZ_URL: http://marquez:5000
+      OPENLINEAGE_NAMESPACE: ${OPENLINEAGE_NAMESPACE:-data_pipeline_observability}
+      WAREHOUSE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-observability}
+      SLA_POLL_INTERVAL_MINUTES: ${SLA_POLL_INTERVAL_MINUTES:-60}
+      SLA_CONFIG_PATH: /app/sla_config.yml
+      INCIDENT_LINEAGE_DEPTH: ${INCIDENT_LINEAGE_DEPTH:-5}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./sla_config.yml:/app/sla_config.yml:ro
+
+  # ── Elementary HTML report (nginx) ────────────────────────────────────────
+  elementary-report:
+    image: nginx:alpine
+    depends_on:
+      - sla-monitor
+    ports:
+      - "8081:80"
+    volumes:
+      - ./reports:/usr/share/nginx/html:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:80 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:
